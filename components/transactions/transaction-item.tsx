@@ -26,24 +26,42 @@ export default function TransactionItem({ transaction: tx }: Props) {
     });
   }
 
+  const isVaultDeposit = tx.note?.startsWith("[Vault Deposit]");
+  const isVaultWithdraw = tx.note?.startsWith("[Vault Withdraw]");
+  const displayTitle = isVaultDeposit
+    ? `Vault Deposit${tx.note?.replace("[Vault Deposit]", "").trim() ? ` · ${tx.note.replace("[Vault Deposit]", "").trim()}` : ""}`
+    : isVaultWithdraw
+    ? `Vault Withdrawal${tx.note?.replace("[Vault Withdraw]", "").trim() ? ` · ${tx.note.replace("[Vault Withdraw]", "").trim()}` : ""}`
+    : tx.note || tx.categories?.name || config.label;
+
+  const displayIcon = isVaultDeposit ? "🛡️" : isVaultWithdraw ? "↩️" : (tx.categories?.icon ?? config.icon);
+
   return (
     <>
       <div className={cn("flex items-center gap-3 px-4 py-3 hover:bg-accent/30 transition-colors group", isPending && "opacity-50")}>
         {/* Icon */}
-        <div className={`w-9 h-9 rounded-xl ${config.bg} flex items-center justify-center flex-shrink-0`}>
+        <div className={`w-9 h-9 rounded-xl ${isVaultDeposit || isVaultWithdraw ? "bg-savings/15 text-savings" : config.bg} flex items-center justify-center flex-shrink-0`}>
           <span className="text-base leading-none">
-            {tx.categories?.icon ?? config.icon}
+            {displayIcon}
           </span>
         </div>
 
         {/* Info */}
         <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setShowEdit(true)}>
           <p className="text-sm font-medium truncate">
-            {tx.note || tx.categories?.name || config.label}
+            {displayTitle}
           </p>
           <p className="text-xs text-muted-foreground">
-            {tx.categories?.name && tx.note ? `${tx.categories.name} · ` : ""}
-            <span className={`text-[10px] uppercase tracking-wide ${config.color}`}>{config.label}</span>
+            {isVaultDeposit ? (
+              <span className="text-[10px] uppercase tracking-wide text-savings font-medium">Vault Deposit</span>
+            ) : isVaultWithdraw ? (
+              <span className="text-[10px] uppercase tracking-wide text-income font-medium">Vault Return</span>
+            ) : (
+              <>
+                {tx.categories?.name && tx.note ? `${tx.categories.name} · ` : ""}
+                <span className={`text-[10px] uppercase tracking-wide ${config.color}`}>{config.label}</span>
+              </>
+            )}
           </p>
         </div>
 

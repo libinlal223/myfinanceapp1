@@ -31,6 +31,7 @@ export interface BalanceSummary {
   savings_total: number;
   investment_total: number;
   available_balance: number;
+  special_savings_balance: number;
 }
 
 export interface PeriodSummary {

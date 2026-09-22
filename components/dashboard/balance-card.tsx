@@ -22,7 +22,21 @@ export default function BalanceCard({ balance, todaySpending }: Props) {
         <p className={`text-4xl md:text-5xl font-bold font-mono-num tracking-tight mb-1 ${isPositive ? "text-foreground" : "text-expense"}`}>
           {formatCurrency(balance.available_balance)}
         </p>
-        <p className="text-xs text-muted-foreground mb-5">All-time across all transactions</p>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mb-5">
+          <span>Spendable funds</span>
+          {balance.special_savings_balance > 0 && (
+            <>
+              <span>•</span>
+              <span className="text-savings font-medium font-mono-num">
+                Vault: {formatCurrency(balance.special_savings_balance)}
+              </span>
+              <span>•</span>
+              <span className="text-foreground font-medium font-mono-num">
+                Total Net: {formatCurrency(balance.available_balance + balance.special_savings_balance + balance.investment_total)}
+              </span>
+            </>
+          )}
+        </div>
 
         {/* Grid of stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -38,7 +52,11 @@ export default function BalanceCard({ balance, todaySpending }: Props) {
             color="text-expense"
             icon={<TrendingDown size={13} />}
           />
-          <StatPill label="Savings" value={balance.savings_total} color="text-savings" />
+          <StatPill
+            label="Savings"
+            value={balance.savings_total + (balance.special_savings_balance || 0)}
+            color="text-savings"
+          />
           <StatPill label="Invested" value={balance.investment_total} color="text-investment" />
         </div>
 

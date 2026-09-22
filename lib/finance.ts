@@ -78,6 +78,8 @@ export async function getDashboardData(
   let expense_total = 0;
   let savings_total = 0;
   let investment_total = 0;
+  let vault_deposits = 0;
+  let vault_withdrawals = 0;
 
   let m_income = 0;
   let m_expense = 0;
@@ -97,16 +99,26 @@ export async function getDashboardData(
     const isThisMonth =
       tx.transaction_date >= monthStart && tx.transaction_date <= monthEnd;
     const isToday = tx.transaction_date === today;
+    const isVaultDeposit = tx.type === "savings" && tx.note?.includes("[Vault Deposit]");
+    const isVaultWithdrawal = tx.type === "income" && tx.note?.includes("[Vault Withdraw]");
 
-    // All time
-    if (tx.type === "income") income_total += amt;
-    else if (tx.type === "expense") expense_total += amt;
-    else if (tx.type === "savings") savings_total += amt;
+    // Special savings vault
+    if (isVaultDeposit) {
+      vault_deposits += amt;
+    } else if (isVaultWithdrawal) {
+      vault_withdrawals += amt;
+    } else {
+      // Regular income & savings
+      if (tx.type === "income") income_total += amt;
+      else if (tx.type === "savings") savings_total += amt;
+    }
+
+    if (tx.type === "expense") expense_total += amt;
     else if (tx.type === "investment") investment_total += amt;
 
-    // This month
+    // This month (exclude internal vault transfers from monthly earned income / monthly savings)
     if (isThisMonth) {
-      if (tx.type === "income") m_income += amt;
+      if (tx.type === "income" && !isVaultWithdrawal) m_income += amt;
       else if (tx.type === "expense") {
         m_expense += amt;
         monthExpenseTotal += amt;
@@ -122,7 +134,7 @@ export async function getDashboardData(
         };
         cur.total += amt;
         catMap.set(catId, cur);
-      } else if (tx.type === "savings") m_savings += amt;
+      } else if (tx.type === "savings" && !isVaultDeposit) m_savings += amt;
       else if (tx.type === "investment") m_investment += amt;
     }
 
@@ -147,14 +159,19 @@ export async function getDashboardData(
   });
   categoryRows.sort((a, b) => b.total - a.total);
 
+  const special_savings_balance = Math.max(0, vault_deposits - vault_withdrawals);
+  const net_vault_transfer = vault_deposits - vault_withdrawals;
+  const available_balance =
+    income_total - expense_total - savings_total - investment_total - net_vault_transfer;
+
   return {
     balance: {
       income_total,
       expense_total,
       savings_total,
       investment_total,
-      available_balance:
-        income_total - expense_total - savings_total - investment_total,
+      available_balance,
+      special_savings_balance,
     },
     period: {
       income_total: m_income,
@@ -194,6 +211,8 @@ export async function getAnalyticsData(
   let expense_total = 0;
   let savings_total = 0;
   let investment_total = 0;
+  let vault_deposits = 0;
+  let vault_withdrawals = 0;
 
   let m_income = 0;
   let m_expense = 0;
@@ -210,16 +229,26 @@ export async function getAnalyticsData(
     const amt = Number(tx.amount) || 0;
     const isSelectedMonth =
       tx.transaction_date >= firstDay && tx.transaction_date <= lastDay;
+    const isVaultDeposit = tx.type === "savings" && tx.note?.includes("[Vault Deposit]");
+    const isVaultWithdrawal = tx.type === "income" && tx.note?.includes("[Vault Withdraw]");
 
-    // All-time balance
-    if (tx.type === "income") income_total += amt;
-    else if (tx.type === "expense") expense_total += amt;
-    else if (tx.type === "savings") savings_total += amt;
+    // Special savings vault
+    if (isVaultDeposit) {
+      vault_deposits += amt;
+    } else if (isVaultWithdrawal) {
+      vault_withdrawals += amt;
+    } else {
+      // Regular all-time balance
+      if (tx.type === "income") income_total += amt;
+      else if (tx.type === "savings") savings_total += amt;
+    }
+
+    if (tx.type === "expense") expense_total += amt;
     else if (tx.type === "investment") investment_total += amt;
 
     // Selected month
     if (isSelectedMonth) {
-      if (tx.type === "income") m_income += amt;
+      if (tx.type === "income" && !isVaultWithdrawal) m_income += amt;
       else if (tx.type === "expense") {
         m_expense += amt;
         monthExpenseTotal += amt;
@@ -235,7 +264,7 @@ export async function getAnalyticsData(
         };
         cur.total += amt;
         catMap.set(catId, cur);
-      } else if (tx.type === "savings") m_savings += amt;
+      } else if (tx.type === "savings" && !isVaultDeposit) m_savings += amt;
       else if (tx.type === "investment") m_investment += amt;
     }
   }
@@ -255,14 +284,19 @@ export async function getAnalyticsData(
   });
   categoryRows.sort((a, b) => b.total - a.total);
 
+  const special_savings_balance = Math.max(0, vault_deposits - vault_withdrawals);
+  const net_vault_transfer = vault_deposits - vault_withdrawals;
+  const available_balance =
+    income_total - expense_total - savings_total - investment_total - net_vault_transfer;
+
   return {
     balance: {
       income_total,
       expense_total,
       savings_total,
       investment_total,
-      available_balance:
-        income_total - expense_total - savings_total - investment_total,
+      available_balance,
+      special_savings_balance,
     },
     period: {
       income_total: m_income,

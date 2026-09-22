@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import BalanceCard from "@/components/dashboard/balance-card";
+import SpecialSavingsCard from "@/components/dashboard/special-savings-card";
 import RecentTransactions from "@/components/dashboard/recent-transactions";
 import SpendingChart from "@/components/dashboard/spending-chart";
 import SummaryCards from "@/components/dashboard/summary-cards";
@@ -33,6 +34,12 @@ export default async function DashboardPage() {
 
       {/* Balance hero */}
       <BalanceCard balance={balance} todaySpending={todaySpending} />
+
+      {/* Special Savings Vault */}
+      <SpecialSavingsCard
+        vaultBalance={balance.special_savings_balance}
+        availableBalance={balance.available_balance}
+      />
 
       {/* This month summary cards */}
       <SummaryCards period={period} monthName={monthName} />

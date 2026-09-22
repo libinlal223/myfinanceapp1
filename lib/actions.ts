@@ -163,6 +163,76 @@ export async function deleteCategory(id: string): Promise<ActionResult> {
   return { success: true };
 }
 
+// ─── Special Savings Vault ──────────────────────────────────────────────────
+
+export async function depositToSpecialSavings(
+  amount: number,
+  label?: string,
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user) return { success: false, error: "Unauthorized" };
+
+  if (!amount || amount <= 0) {
+    return { success: false, error: "Amount must be greater than zero" };
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+  const noteText = label?.trim()
+    ? `[Vault Deposit] ${label.trim()}`
+    : `[Vault Deposit] Special Savings`;
+
+  const { error } = await supabase.from("transactions").insert({
+    user_id: user.id,
+    type: "savings",
+    amount,
+    note: noteText,
+    transaction_date: today,
+  });
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath("/", "layout");
+  return { success: true };
+}
+
+export async function withdrawFromSpecialSavings(
+  amount: number,
+  label?: string,
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user) return { success: false, error: "Unauthorized" };
+
+  if (!amount || amount <= 0) {
+    return { success: false, error: "Amount must be greater than zero" };
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+  const noteText = label?.trim()
+    ? `[Vault Withdraw] ${label.trim()}`
+    : `[Vault Withdraw] Transfer to Balance`;
+
+  const { error } = await supabase.from("transactions").insert({
+    user_id: user.id,
+    type: "income",
+    amount,
+    note: noteText,
+    transaction_date: today,
+  });
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath("/", "layout");
+  return { success: true };
+}
+
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 export async function signOut(): Promise<void> {
