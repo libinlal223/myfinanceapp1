@@ -39,8 +39,7 @@ export default function RegisterForm() {
     // Try auto-login
     const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
     if (!loginError) {
-      router.push("/dashboard");
-      router.refresh();
+      window.location.href = "/dashboard";
       return;
     }
 

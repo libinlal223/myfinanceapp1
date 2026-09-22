@@ -15,15 +15,7 @@ export default async function AppLayout({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Fetch user profile
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("display_name")
-    .eq("id", user.id)
-    .maybeSingle();
-
   const displayName =
-    profile?.display_name ||
     user.user_metadata?.display_name ||
     user.email?.split("@")[0] ||
     "User";
